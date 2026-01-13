@@ -1,13 +1,24 @@
 import { NextResponse } from 'next/server'
 
-// This is where you'll integrate with Claude API
+// Configuration: Switch between AI providers easily
+const AI_PROVIDER = process.env.AI_PROVIDER || 'gemini' // Options: 'gemini' or 'claude'
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
+
 export async function POST(request: Request) {
   try {
     const { query, imageData } = await request.json()
 
-    // In production, call Claude API here
-    // For now, return demo data
-    const results = generateDemoResults(query)
+    // Route to appropriate AI provider
+    let results
+    if (AI_PROVIDER === 'claude' && ANTHROPIC_API_KEY) {
+      results = await searchWithClaude(query, imageData)
+    } else if (AI_PROVIDER === 'gemini' && GEMINI_API_KEY) {
+      results = await searchWithGemini(query, imageData)
+    } else {
+      // Fallback to demo mode if no API key
+      results = generateDemoResults(query)
+    }
 
     return NextResponse.json(results)
   } catch (error) {
@@ -16,6 +27,150 @@ export async function POST(request: Request) {
       { error: 'Failed to process request' },
       { status: 500 }
     )
+  }
+}
+
+// Google Gemini Integration
+async function searchWithGemini(query: string, imageData?: string) {
+  try {
+    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
+    
+    const prompt = `You are a shopping assistant. Analyze this search query: "${query}"
+
+Determine if the user wants:
+- "product" - physical items to buy
+- "travel" - flights, hotels, vacation packages
+- "service" - local services like plumbers, electricians, etc.
+
+Then provide 3-5 specific product recommendations in JSON format ONLY (no markdown, no explanation):
+
+{
+  "intent": "product|travel|service",
+  "category": "category name",
+  "recommendations": [
+    {
+      "name": "Specific Product Name",
+      "description": "Brief description (1-2 sentences)",
+      "estimatedPrice": "$XX.XX or price range",
+      "retailer": "Amazon|Wayfair|Booking.com|Skyscanner|HomeAdvisor|etc",
+      "affiliateNetwork": "amazon|wayfair|booking|skyscanner|shareasale|cj",
+      "productId": "sample-product-id",
+      "reason": "Why this matches their need (1 sentence)"
+    }
+  ]
+}
+
+Important: Return ONLY the JSON object, no other text.`
+
+    const response = await fetch(`${endpoint}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2000,
+        }
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    
+    // Parse JSON from response
+    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0])
+    }
+    
+    // Fallback if parsing fails
+    return generateDemoResults(query)
+  } catch (error) {
+    console.error('Gemini API Error:', error)
+    return generateDemoResults(query)
+  }
+}
+
+// Claude Integration (for future use)
+async function searchWithClaude(query: string, imageData?: string) {
+  try {
+    const messages: any[] = [
+      {
+        role: 'user',
+        content: imageData 
+          ? [
+              {
+                type: 'image',
+                source: { type: 'base64', media_type: 'image/jpeg', data: imageData }
+              },
+              { 
+                type: 'text', 
+                text: query || 'What product is shown in this image? Provide specific product recommendations.'
+              }
+            ]
+          : `You are a shopping assistant. The user is looking for: "${query}". 
+          
+Analyze their intent and provide 3-5 specific product recommendations in JSON format ONLY (no markdown, no preamble):
+
+{
+  "intent": "product|travel|service",
+  "category": "category name",
+  "recommendations": [
+    {
+      "name": "Product Name",
+      "description": "Brief description",
+      "estimatedPrice": "$XX.XX",
+      "retailer": "Amazon|Wayfair|Home Depot|Booking.com|etc",
+      "affiliateNetwork": "amazon|shareasale|booking|etc",
+      "productId": "sample-product-id",
+      "reason": "Why this matches their need"
+    }
+  ]
+}`
+      }
+    ]
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY!,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`Claude API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const aiResponse = data.content.find((c: any) => c.type === 'text')?.text || ''
+    
+    // Parse JSON response
+    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0])
+    }
+
+    return generateDemoResults(query)
+  } catch (error) {
+    console.error('Claude API Error:', error)
+    return generateDemoResults(query)
   }
 }
 
