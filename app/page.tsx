@@ -24,11 +24,12 @@ interface Recommendation {
   affiliateNetwork: string
   productId: string
   imageUrl: string
+  productUrl?: string
   reason: string
 }
 
 const affiliateNetworks = {
-  amazon: { name: 'Amazon Associates', commission: '1-10%', id: 'YOUR_AMAZON_ID' },
+  amazon: { name: 'Amazon Associates', commission: '1-10%', id: 'shopai09-20' },
   shareasale: { name: 'ShareASale', commission: '5-20%', id: 'YOUR_SHAREASALE_ID' },
   cj: { name: 'CJ Affiliate', commission: '3-15%', id: 'YOUR_CJ_ID' },
   rakuten: { name: 'Rakuten Advertising', commission: '2-10%', id: 'YOUR_RAKUTEN_ID' },
@@ -230,9 +231,30 @@ export default function Home() {
     }
   }
 
-  const generateAffiliateLink = (network: string, productId: string) => {
-    // This would generate actual affiliate links in production
-    return `#affiliate-link-${network}-${productId}`
+  const generateAffiliateLink = (rec: Recommendation) => {
+    // If Gemini provided a productUrl, use it with affiliate tag
+    if (rec.productUrl) {
+      const url = new URL(rec.productUrl)
+      const amazonTag = affiliateNetworks[rec.affiliateNetwork as keyof typeof affiliateNetworks]?.id || 'shopai-20'
+      
+      if (rec.affiliateNetwork === 'amazon') {
+        // Add Amazon affiliate tag
+        url.searchParams.set('tag', amazonTag)
+        return url.toString()
+      }
+      return rec.productUrl
+    }
+    
+    // Otherwise build affiliate link from scratch
+    const amazonTag = affiliateNetworks[rec.affiliateNetwork as keyof typeof affiliateNetworks]?.id || 'shopai-20'
+    
+    if (rec.affiliateNetwork === 'amazon' && rec.productId) {
+      // Build Amazon affiliate link with ASIN
+      return `https://www.amazon.com/dp/${rec.productId}?tag=${amazonTag}`
+    }
+    
+    // Fallback - search link
+    return `https://www.amazon.com/s?k=${encodeURIComponent(rec.name)}&tag=${amazonTag}`
   }
 
   return (
@@ -349,12 +371,12 @@ export default function Home() {
                                         )}
                                       </div>
                                       <a
-                                        href={generateAffiliateLink(rec.affiliateNetwork, rec.productId)}
+                                        href={generateAffiliateLink(rec)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors"
                                       >
-                                        View Product
+                                        View on Amazon
                                         <ExternalLink className="w-4 h-4" />
                                       </a>
                                     </div>

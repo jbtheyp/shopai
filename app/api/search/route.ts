@@ -39,19 +39,26 @@ async function searchWithGemini(query: string, imageData?: string) {
 
 Return VALID JSON ONLY - no markdown, no explanation, no code blocks.
 
+IMPORTANT: 
+- Search for REAL products that exist on Amazon
+- Provide actual Amazon ASIN codes (10-character product IDs like B08N5WRWNW)
+- Include real product image URLs from Amazon or use format: https://m.media-amazon.com/images/I/[IMAGE_ID].jpg
+- Use real product names from Amazon
+
 Format:
 {
   "intent": "product",
   "category": "category name",
   "recommendations": [
     {
-      "name": "Product Name",
+      "name": "Exact Product Name from Amazon",
       "description": "Brief description",
       "estimatedPrice": "$XX.XX",
       "retailer": "Amazon",
       "affiliateNetwork": "amazon",
-      "productId": "B08SAMPLE",
-      "imageUrl": "https://images.unsplash.com/photo-xxx",
+      "productId": "B08N5WRWNW",
+      "imageUrl": "https://m.media-amazon.com/images/I/[IMAGE_ID].jpg",
+      "productUrl": "https://www.amazon.com/dp/B08N5WRWNW",
       "reason": "Why it matches"
     }
   ]
@@ -59,11 +66,11 @@ Format:
 
 CRITICAL RULES:
 1. Return ONLY valid JSON - no text before or after
-2. Use double quotes for all strings
-3. NO trailing commas before closing brackets
-4. Keep descriptions short (under 100 characters)
-5. Provide 3 specific products
-6. Image URLs are optional - omit if uncertain
+2. Use REAL Amazon ASINs (B0XXXXXXXX format)
+3. Include productUrl with the Amazon link
+4. NO trailing commas before closing brackets
+5. Keep descriptions short (under 100 characters)
+6. Provide 3 specific products that actually exist
 
 Return the JSON now:`
 
