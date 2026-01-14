@@ -55,12 +55,18 @@ Then provide 3-5 specific product recommendations in JSON format ONLY (no markdo
       "retailer": "Amazon|Wayfair|Booking.com|Skyscanner|HomeAdvisor|etc",
       "affiliateNetwork": "amazon|wayfair|booking|skyscanner|shareasale|cj",
       "productId": "sample-product-id",
+      "imageUrl": "https://example.com/product-image.jpg",
       "reason": "Why this matches their need (1 sentence)"
     }
   ]
 }
 
-Important: Return ONLY the JSON object, no other text.`
+IMPORTANT: 
+- Include a real, working "imageUrl" for each product from a CDN or image hosting service
+- Use placeholder image services like "https://placehold.co/400x400/png?text=Product+Name" if you cannot find a real image
+- For travel items, use relevant destination or hotel images
+- For services, use relevant service category images
+- Return ONLY the JSON object, no other text.`
 
     const response = await fetch(`${endpoint}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -133,10 +139,13 @@ Analyze their intent and provide 3-5 specific product recommendations in JSON fo
       "retailer": "Amazon|Wayfair|Home Depot|Booking.com|etc",
       "affiliateNetwork": "amazon|shareasale|booking|etc",
       "productId": "sample-product-id",
+      "imageUrl": "https://example.com/product-image.jpg",
       "reason": "Why this matches their need"
     }
   ]
-}`
+}
+
+IMPORTANT: Include a working "imageUrl" for each product. Use placeholder images if needed.`
       }
     ]
 
@@ -202,6 +211,7 @@ function generateDemoResults(query: string) {
           retailer: 'Skyscanner',
           affiliateNetwork: 'skyscanner',
           productId: 'flight-search',
+          imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=400&fit=crop',
           reason: 'Best for comparing flight prices'
         },
         {
@@ -211,6 +221,7 @@ function generateDemoResults(query: string) {
           retailer: 'Booking.com',
           affiliateNetwork: 'booking',
           productId: 'hotel-search',
+          imageUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=400&fit=crop',
           reason: 'Wide selection with competitive rates'
         }
       ]
@@ -227,6 +238,7 @@ function generateDemoResults(query: string) {
           retailer: 'HomeAdvisor',
           affiliateNetwork: 'shareasale',
           productId: 'homeadvisor-service',
+          imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=400&fit=crop',
           reason: 'Pre-screened professionals with reviews'
         }
       ]
@@ -245,6 +257,7 @@ function generateDemoResults(query: string) {
             retailer: 'Amazon',
             affiliateNetwork: 'amazon',
             productId: 'B09LAPTOP1',
+            imageUrl: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=400&h=400&fit=crop',
             reason: 'Best balance of performance and portability'
           },
           {
@@ -254,6 +267,7 @@ function generateDemoResults(query: string) {
             retailer: 'Amazon',
             affiliateNetwork: 'amazon',
             productId: 'B0MACBOOK1',
+            imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop',
             reason: 'Excellent for creative work with long battery life'
           }
         ]
@@ -270,6 +284,7 @@ function generateDemoResults(query: string) {
             retailer: 'Wayfair',
             affiliateNetwork: 'wayfair',
             productId: 'W1234AERON',
+            imageUrl: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=400&h=400&fit=crop',
             reason: 'Industry-leading ergonomics'
           },
           {
@@ -279,6 +294,7 @@ function generateDemoResults(query: string) {
             retailer: 'Amazon',
             affiliateNetwork: 'amazon',
             productId: 'B08BRANCH1',
+            imageUrl: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop',
             reason: 'Best value ergonomic chair'
           }
         ]
@@ -295,6 +311,7 @@ function generateDemoResults(query: string) {
             retailer: 'Amazon',
             affiliateNetwork: 'amazon',
             productId: 'B08SAMPLE1',
+            imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop',
             reason: 'Highly rated with fast shipping'
           }
         ]

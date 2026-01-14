@@ -23,6 +23,7 @@ interface Recommendation {
   retailer: string
   affiliateNetwork: string
   productId: string
+  imageUrl: string
   reason: string
 }
 
@@ -308,31 +309,48 @@ export default function Home() {
                           
                           <div className="space-y-4">
                             {message.content.recommendations?.map((rec, i) => (
-                              <div key={i} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow bg-gray-50">
-                                <div className="flex justify-between items-start mb-2">
-                                  <h3 className="font-semibold text-gray-900 text-lg">{rec.name}</h3>
-                                  <span className="text-lg font-bold text-indigo-600">{rec.estimatedPrice}</span>
-                                </div>
-                                <p className="text-gray-600 text-sm mb-3">{rec.description}</p>
-                                <p className="text-xs text-gray-500 mb-3 italic">{rec.reason}</p>
-                                <div className="flex items-center justify-between">
-                                  <div className="text-xs text-gray-500">
-                                    <span className="font-medium">{rec.retailer}</span>
-                                    {affiliateNetworks[rec.affiliateNetwork as keyof typeof affiliateNetworks] && (
-                                      <span className="ml-2">
-                                        • {affiliateNetworks[rec.affiliateNetwork as keyof typeof affiliateNetworks].commission} commission
-                                      </span>
-                                    )}
+                              <div key={i} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow bg-white">
+                                <div className="flex flex-col md:flex-row">
+                                  {/* Product Image */}
+                                  <div className="md:w-48 md:flex-shrink-0">
+                                    <img 
+                                      src={rec.imageUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop'} 
+                                      alt={rec.name}
+                                      className="w-full h-48 md:h-full object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.src = 'https://placehold.co/400x400/e0e7ff/4f46e5/png?text=' + encodeURIComponent(rec.name.substring(0, 20))
+                                      }}
+                                    />
                                   </div>
-                                  <a
-                                    href={generateAffiliateLink(rec.affiliateNetwork, rec.productId)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors"
-                                  >
-                                    View Product
-                                    <ExternalLink className="w-4 h-4" />
-                                  </a>
+                                  
+                                  {/* Product Details */}
+                                  <div className="flex-1 p-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <h3 className="font-semibold text-gray-900 text-lg">{rec.name}</h3>
+                                      <span className="text-lg font-bold text-indigo-600 ml-2">{rec.estimatedPrice}</span>
+                                    </div>
+                                    <p className="text-gray-600 text-sm mb-3">{rec.description}</p>
+                                    <p className="text-xs text-gray-500 mb-3 italic">{rec.reason}</p>
+                                    <div className="flex items-center justify-between">
+                                      <div className="text-xs text-gray-500">
+                                        <span className="font-medium">{rec.retailer}</span>
+                                        {affiliateNetworks[rec.affiliateNetwork as keyof typeof affiliateNetworks] && (
+                                          <span className="ml-2">
+                                            • {affiliateNetworks[rec.affiliateNetwork as keyof typeof affiliateNetworks].commission} commission
+                                          </span>
+                                        )}
+                                      </div>
+                                      <a
+                                        href={generateAffiliateLink(rec.affiliateNetwork, rec.productId)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors"
+                                      >
+                                        View Product
+                                        <ExternalLink className="w-4 h-4" />
+                                      </a>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             ))}
