@@ -35,42 +35,51 @@ async function searchWithGemini(query: string, imageData?: string) {
   try {
     const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
     
-    const prompt = `You are a shopping assistant. Analyze: "${query}"
+    const prompt = `You are a shopping assistant. Find real products for: "${query}"
+
+IMPORTANT RULES:
+1. Search across MULTIPLE retailers: Amazon, Walmart, Target, Best Buy, Wayfair, Home Depot
+2. VARY the retailers - don't use the same retailer for all products
+3. Use REAL product names that currently exist
+4. Provide REAL current prices from 2025/2026
+5. For images, use high-quality product photos from Unsplash (generic product category images)
+6. Provide actual product page URLs
 
 Return VALID JSON ONLY - no markdown, no explanation, no code blocks.
-
-IMPORTANT: 
-- Search for REAL products that exist on Amazon
-- Provide actual Amazon ASIN codes (10-character product IDs like B08N5WRWNW)
-- Include real product image URLs from Amazon or use format: https://m.media-amazon.com/images/I/[IMAGE_ID].jpg
-- Use real product names from Amazon
 
 Format:
 {
   "intent": "product",
-  "category": "category name",
+  "category": "Category Name",
   "recommendations": [
     {
-      "name": "Exact Product Name from Amazon",
-      "description": "Brief description",
+      "name": "Exact Real Product Name",
+      "description": "Brief description (under 100 chars)",
       "estimatedPrice": "$XX.XX",
-      "retailer": "Amazon",
-      "affiliateNetwork": "amazon",
-      "productId": "B08N5WRWNW",
-      "imageUrl": "https://m.media-amazon.com/images/I/[IMAGE_ID].jpg",
-      "productUrl": "https://www.amazon.com/dp/B08N5WRWNW",
-      "reason": "Why it matches"
+      "retailer": "Amazon|Walmart|Target|Best Buy|Wayfair|Home Depot",
+      "affiliateNetwork": "amazon|shareasale|rakuten|cj",
+      "productId": "Product SKU or ASIN",
+      "imageUrl": "https://images.unsplash.com/photo-XXXXX?w=400&h=400&fit=crop",
+      "productUrl": "https://www.retailer.com/product-page",
+      "reason": "Why this matches their need"
     }
   ]
 }
 
-CRITICAL RULES:
-1. Return ONLY valid JSON - no text before or after
-2. Use REAL Amazon ASINs (B0XXXXXXXX format)
-3. Include productUrl with the Amazon link
-4. NO trailing commas before closing brackets
-5. Keep descriptions short (under 100 characters)
-6. Provide 3 specific products that actually exist
+CRITICAL:
+- Return ONLY valid JSON
+- NO trailing commas
+- Use Unsplash for imageUrl (search: headphones, laptop, chair, etc.)
+- Use different retailers for each product when possible
+- Keep descriptions under 100 characters
+- Provide exactly 3 products
+
+Examples of good Unsplash image URLs by category:
+- Headphones: https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop
+- Laptop: https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop
+- Chair: https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop
+- Phone: https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop
+- Watch: https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop
 
 Return the JSON now:`
 

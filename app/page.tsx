@@ -232,28 +232,49 @@ export default function Home() {
   }
 
   const generateAffiliateLink = (rec: Recommendation) => {
-    // If Gemini provided a productUrl, use it with affiliate tag
+    const network = rec.affiliateNetwork
+    const retailer = rec.retailer.toLowerCase()
+    
+    // If Gemini provided a productUrl, enhance it with affiliate parameters
     if (rec.productUrl) {
-      const url = new URL(rec.productUrl)
-      const amazonTag = affiliateNetworks[rec.affiliateNetwork as keyof typeof affiliateNetworks]?.id || 'shopai-20'
-      
-      if (rec.affiliateNetwork === 'amazon') {
-        // Add Amazon affiliate tag
-        url.searchParams.set('tag', amazonTag)
+      try {
+        const url = new URL(rec.productUrl)
+        
+        // Add affiliate parameters based on retailer
+        if (retailer.includes('amazon')) {
+          const amazonTag = affiliateNetworks.amazon?.id || 'shopai09-20'
+          url.searchParams.set('tag', amazonTag)
+        } else if (retailer.includes('walmart')) {
+          // Walmart affiliate parameters
+          const walmartId = affiliateNetworks.rakuten?.id || 'YOUR_RAKUTEN_ID'
+          url.searchParams.set('wmlspartner', walmartId)
+        } else if (retailer.includes('target')) {
+          // Target uses Rakuten/Impact
+          const targetId = affiliateNetworks.rakuten?.id || 'YOUR_RAKUTEN_ID'
+          url.searchParams.set('afid', targetId)
+        }
+        
         return url.toString()
+      } catch (e) {
+        // If URL parsing fails, use the URL as-is
+        return rec.productUrl
       }
-      return rec.productUrl
     }
     
-    // Otherwise build affiliate link from scratch
-    const amazonTag = affiliateNetworks[rec.affiliateNetwork as keyof typeof affiliateNetworks]?.id || 'shopai-20'
-    
-    if (rec.affiliateNetwork === 'amazon' && rec.productId) {
-      // Build Amazon affiliate link with ASIN
+    // Build affiliate link from scratch based on retailer
+    if (retailer.includes('amazon') && rec.productId) {
+      const amazonTag = affiliateNetworks.amazon?.id || 'shopai09-20'
       return `https://www.amazon.com/dp/${rec.productId}?tag=${amazonTag}`
+    } else if (retailer.includes('walmart') && rec.productId) {
+      return `https://www.walmart.com/ip/${rec.productId}`
+    } else if (retailer.includes('target') && rec.productId) {
+      return `https://www.target.com/p/-/A-${rec.productId}`
+    } else if (retailer.includes('best buy') && rec.productId) {
+      return `https://www.bestbuy.com/site/${rec.productId}.p`
     }
     
-    // Fallback - search link
+    // Fallback - search link with retailer
+    const amazonTag = affiliateNetworks.amazon?.id || 'shopai09-20'
     return `https://www.amazon.com/s?k=${encodeURIComponent(rec.name)}&tag=${amazonTag}`
   }
 
@@ -336,19 +357,33 @@ export default function Home() {
                                   {/* Product Image */}
                                   <div className="md:w-48 md:flex-shrink-0 bg-gray-100">
                                     <img 
-                                      src={rec.imageUrl && rec.imageUrl.startsWith('http') ? rec.imageUrl : `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop`} 
+                                      src={rec.imageUrl || 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=400&h=400&fit=crop'} 
                                       alt={rec.name}
                                       className="w-full h-48 md:h-full object-cover"
                                       onError={(e) => {
-                                        // Fallback to a category-appropriate placeholder
-                                        const intent = typeof message.content === 'object' ? message.content.intent : 'product';
-                                        const categoryImage = intent === 'travel' 
-                                          ? 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=400&fit=crop'
-                                          : intent === 'service'
-                                          ? 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=400&fit=crop'
-                                          : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop';
-                                        e.currentTarget.src = categoryImage;
-                                        e.currentTarget.onerror = null; // Prevent infinite loop
+                                        console.log('Image failed to load:', rec.imageUrl)
+                                        
+                                        // Use category-appropriate placeholder from Unsplash
+                                        const productName = rec.name.toLowerCase()
+                                        let fallbackImage = 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=400&h=400&fit=crop'
+                                        
+                                        if (productName.includes('headphone') || productName.includes('earbud')) {
+                                          fallbackImage = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop'
+                                        } else if (productName.includes('laptop') || productName.includes('computer')) {
+                                          fallbackImage = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop'
+                                        } else if (productName.includes('phone')) {
+                                          fallbackImage = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop'
+                                        } else if (productName.includes('chair') || productName.includes('desk')) {
+                                          fallbackImage = 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop'
+                                        } else if (productName.includes('tv') || productName.includes('monitor')) {
+                                          fallbackImage = 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&h=400&fit=crop'
+                                        } else if (productName.includes('camera')) {
+                                          fallbackImage = 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=400&fit=crop'
+                                        }
+                                        
+                                        console.log('Using fallback:', fallbackImage)
+                                        e.currentTarget.src = fallbackImage
+                                        e.currentTarget.onerror = null // Prevent infinite loop
                                       }}
                                     />
                                   </div>
@@ -376,7 +411,7 @@ export default function Home() {
                                         rel="noopener noreferrer"
                                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors"
                                       >
-                                        View on Amazon
+                                        View on {rec.retailer}
                                         <ExternalLink className="w-4 h-4" />
                                       </a>
                                     </div>
