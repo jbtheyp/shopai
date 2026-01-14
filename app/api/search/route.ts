@@ -35,53 +35,75 @@ async function searchWithGemini(query: string, imageData?: string) {
   try {
     const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
     
-    const prompt = `You are a shopping assistant. Find real products for: "${query}"
+    const prompt = `You are a product search API. User query: "${query}"
 
-IMPORTANT RULES:
-1. Search across MULTIPLE retailers: Amazon, Walmart, Target, Best Buy, Wayfair, Home Depot
-2. VARY the retailers - don't use the same retailer for all products
-3. Use REAL product names that currently exist
-4. Provide REAL current prices from 2025/2026
-5. For images, use high-quality product photos from Unsplash (generic product category images)
-6. Provide actual product page URLs
+⚠️ CRITICAL: Return ONLY raw JSON. NO markdown. NO code blocks. NO \`\`\`json wrapper. Start with { and end with }
 
-Return VALID JSON ONLY - no markdown, no explanation, no code blocks.
+CRITICAL REQUIREMENTS - READ CAREFULLY:
 
-Format:
+1. IMAGES: Use ONLY these exact Unsplash URLs based on product category:
+   - Headphones/Earbuds: https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop
+   - Laptops/Computers: https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop
+   - Phones: https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop
+   - Monitors/TVs: https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&h=400&fit=crop
+   - Chairs/Furniture: https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop
+   - Kitchen/Appliances: https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=400&h=400&fit=crop
+   - Other products: https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=400&h=400&fit=crop
+
+2. PRICES: Research and provide REAL current 2026 market prices
+   
+3. RETAILERS: Pick from: Amazon, Walmart, Target, Best Buy (use different ones)
+
+4. PRODUCT URLs: 
+   - Amazon: https://www.amazon.com/s?k=PRODUCT_NAME_HERE
+   - Walmart: https://www.walmart.com/search?q=PRODUCT_NAME_HERE
+   - Target: https://www.target.com/s?searchTerm=PRODUCT_NAME_HERE
+   - Best Buy: https://www.bestbuy.com/site/searchpage.jsp?st=PRODUCT_NAME_HERE
+   
+5. PRODUCT NAMES: Use real, specific product models that exist (e.g., "Sony WH-1000XM5", "Apple AirPods Pro")
+
+Return ONLY this JSON structure:
 {
   "intent": "product",
-  "category": "Category Name",
+  "category": "Product Category",
   "recommendations": [
     {
-      "name": "Exact Real Product Name",
-      "description": "Brief description (under 100 chars)",
+      "name": "Real Brand Name + Model",
+      "description": "Brief specs",
       "estimatedPrice": "$XX.XX",
-      "retailer": "Amazon|Walmart|Target|Best Buy|Wayfair|Home Depot",
-      "affiliateNetwork": "amazon|shareasale|rakuten|cj",
-      "productId": "Product SKU or ASIN",
-      "imageUrl": "https://images.unsplash.com/photo-XXXXX?w=400&h=400&fit=crop",
-      "productUrl": "https://www.retailer.com/product-page",
-      "reason": "Why this matches their need"
+      "retailer": "Amazon",
+      "affiliateNetwork": "amazon",
+      "productId": "search-query",
+      "imageUrl": "USE ONE OF THE UNSPLASH URLS ABOVE",
+      "productUrl": "USE ONE OF THE SEARCH URLS ABOVE",
+      "reason": "Why relevant"
+    },
+    {
+      "name": "Different Brand + Model",
+      "description": "Brief specs",
+      "estimatedPrice": "$XX.XX",
+      "retailer": "Walmart",
+      "affiliateNetwork": "rakuten",
+      "productId": "search-query",
+      "imageUrl": "USE ONE OF THE UNSPLASH URLS ABOVE",
+      "productUrl": "USE ONE OF THE SEARCH URLS ABOVE",
+      "reason": "Why relevant"
+    },
+    {
+      "name": "Another Brand + Model",
+      "description": "Brief specs", 
+      "estimatedPrice": "$XX.XX",
+      "retailer": "Target",
+      "affiliateNetwork": "rakuten",
+      "productId": "search-query",
+      "imageUrl": "USE ONE OF THE UNSPLASH URLS ABOVE",
+      "productUrl": "USE ONE OF THE SEARCH URLS ABOVE",
+      "reason": "Why relevant"
     }
   ]
 }
 
-CRITICAL:
-- Return ONLY valid JSON
-- NO trailing commas
-- Use Unsplash for imageUrl (search: headphones, laptop, chair, etc.)
-- Use different retailers for each product when possible
-- Keep descriptions under 100 characters
-- Provide exactly 3 products
-
-Examples of good Unsplash image URLs by category:
-- Headphones: https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop
-- Laptop: https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop
-- Chair: https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop
-- Phone: https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop
-- Watch: https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop
-
-Return the JSON now:`
+CRITICAL: NO trailing commas. Return ONLY valid JSON. Use the EXACT Unsplash URLs provided above.`
 
     const response = await fetch(`${endpoint}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -96,7 +118,7 @@ Return the JSON now:`
         }],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 2000,
+          maxOutputTokens: 4000,
         }
       })
     })
@@ -106,11 +128,14 @@ Return the JSON now:`
     }
 
     const data = await response.json()
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    let aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
     
     console.log('=== GEMINI RAW RESPONSE ===')
     console.log(aiResponse)
     console.log('=== END RAW RESPONSE ===')
+    
+    // Strip markdown code blocks if present
+    aiResponse = aiResponse.replace(/```json\s*/g, '').replace(/```\s*/g, '')
     
     // Parse JSON from response with error handling
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/)
