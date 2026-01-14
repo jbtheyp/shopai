@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 // Google Gemini Integration
 async function searchWithGemini(query: string, imageData?: string) {
   try {
-    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
+    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
     
     const prompt = `You are a shopping assistant. Analyze this search query: "${query}"
 
