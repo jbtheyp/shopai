@@ -319,9 +319,10 @@ export default function Home() {
                                       className="w-full h-48 md:h-full object-cover"
                                       onError={(e) => {
                                         // Fallback to a category-appropriate placeholder
-                                        const categoryImage = message.content.intent === 'travel' 
+                                        const intent = typeof message.content === 'object' ? message.content.intent : 'product';
+                                        const categoryImage = intent === 'travel' 
                                           ? 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=400&fit=crop'
-                                          : message.content.intent === 'service'
+                                          : intent === 'service'
                                           ? 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=400&fit=crop'
                                           : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop';
                                         e.currentTarget.src = categoryImage;
