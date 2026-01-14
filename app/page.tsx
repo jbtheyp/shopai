@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Search, Camera, Send, ShoppingBag, Plane, Wrench, ExternalLink, Loader2, Sparkles } from 'lucide-react'
+import { Search, Camera, Send, ShoppingBag, Plane, Wrench, ExternalLink, Loader2, Sparkles, BookOpen, Package, Zap } from 'lucide-react'
 
 interface Message {
   type: 'user' | 'ai'
@@ -35,6 +35,82 @@ const affiliateNetworks = {
   skyscanner: { name: 'Skyscanner', commission: 'CPA', id: 'YOUR_SKYSCANNER_ID' },
   homedepot: { name: 'Home Depot', commission: '3-8%', id: 'YOUR_HOMEDEPOT_ID' },
   wayfair: { name: 'Wayfair', commission: '5-7%', id: 'YOUR_WAYFAIR_ID' },
+}
+
+// Loading Animation Component
+function SearchingRobotAnimation() {
+  const [currentMessage, setCurrentMessage] = useState(0)
+  
+  const messages = [
+    "🤖 Analyzing your request...",
+    "📚 Scanning product catalogs...",
+    "🔍 Comparing prices...",
+    "✨ Finding the best deals...",
+    "🎯 Matching your preferences...",
+  ]
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentMessage((prev) => (prev + 1) % messages.length)
+    }, 1500)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="flex justify-center items-center py-12">
+      <div className="max-w-md w-full">
+        {/* Robot Animation */}
+        <div className="relative mb-6">
+          <div className="flex justify-center items-center">
+            {/* Robot Body */}
+            <div className="relative">
+              {/* Robot Head */}
+              <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg relative animate-bounce">
+                {/* Eyes */}
+                <div className="absolute top-6 left-4 w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                <div className="absolute top-6 right-4 w-3 h-3 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.3s' }}></div>
+                
+                {/* Antenna */}
+                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-1 h-4 bg-indigo-400"></div>
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
+                
+                {/* Smile */}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-10 h-2 border-b-2 border-white rounded-full"></div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Floating Catalogs */}
+          <div className="absolute top-0 left-8 animate-float">
+            <BookOpen className="w-8 h-8 text-indigo-400 opacity-60" />
+          </div>
+          <div className="absolute top-4 right-8 animate-float" style={{ animationDelay: '0.5s' }}>
+            <Package className="w-8 h-8 text-purple-400 opacity-60" />
+          </div>
+          <div className="absolute bottom-4 left-12 animate-float" style={{ animationDelay: '1s' }}>
+            <Zap className="w-6 h-6 text-yellow-400 opacity-60" />
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mb-4">
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full animate-progress"></div>
+          </div>
+        </div>
+
+        {/* Loading Message */}
+        <div className="text-center">
+          <p className="text-lg font-medium text-gray-700 animate-fade-in">
+            {messages[currentMessage]}
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Powered by AI ✨
+          </p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function Home() {
@@ -268,6 +344,10 @@ export default function Home() {
                 )}
               </div>
             ))}
+            
+            {/* Show Loading Animation */}
+            {isLoading && <SearchingRobotAnimation />}
+            
             <div ref={messagesEndRef} />
           </div>
         )}
@@ -319,6 +399,36 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Add custom animations to globals.css */}
+      <style jsx global>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes progress {
+          0% { width: 0%; }
+          100% { width: 100%; }
+        }
+        
+        @keyframes fade-in {
+          0% { opacity: 0; transform: translateY(10px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        
+        .animate-progress {
+          animation: progress 2s ease-in-out infinite;
+        }
+        
+        .animate-fade-in {
+          animation: fade-in 0.8s ease-out;
+        }
+      `}</style>
     </div>
   )
 }
