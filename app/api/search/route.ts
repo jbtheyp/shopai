@@ -99,20 +99,31 @@ Return the JSON now:`
     const data = await response.json()
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
     
+    console.log('=== GEMINI RAW RESPONSE ===')
+    console.log(aiResponse)
+    console.log('=== END RAW RESPONSE ===')
+    
     // Parse JSON from response with error handling
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
+      console.log('Found JSON match, attempting to parse...')
       try {
         const results = JSON.parse(jsonMatch[0])
         console.log('✅ Successfully parsed JSON')
-        console.log('Image URLs from Gemini:', results.recommendations?.map((r: any) => r.imageUrl))
+        console.log('Results:', JSON.stringify(results, null, 2))
+        console.log('Product URLs:', results.recommendations?.map((r: any) => r.productUrl))
+        console.log('Product IDs (ASINs):', results.recommendations?.map((r: any) => r.productId))
+        console.log('Image URLs:', results.recommendations?.map((r: any) => r.imageUrl))
         
         // Fix/validate image URLs - simplified version
         if (results.recommendations && Array.isArray(results.recommendations)) {
-          results.recommendations.forEach((rec: any) => {
+          results.recommendations.forEach((rec: any, idx: number) => {
+            console.log(`Processing product ${idx + 1}: ${rec.name}`)
+            
             // If imageUrl is missing or invalid, provide one based on product name
             if (!rec.imageUrl || !rec.imageUrl.startsWith('http')) {
               const productName = (rec.name || '').toLowerCase()
+              console.log(`  No valid imageUrl, product name: ${productName}`)
               
               // Smart image matching
               if (productName.includes('headphone') || productName.includes('earbud')) {
@@ -127,18 +138,30 @@ Return the JSON now:`
                 // Generic product
                 rec.imageUrl = 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=400&h=400&fit=crop'
               }
+              console.log(`  Assigned fallback imageUrl: ${rec.imageUrl}`)
+            } else {
+              console.log(`  Has valid imageUrl: ${rec.imageUrl}`)
+            }
+            
+            // Validate productUrl
+            if (rec.productUrl) {
+              console.log(`  Has productUrl: ${rec.productUrl}`)
+            } else {
+              console.log(`  Missing productUrl, will generate from ASIN: ${rec.productId}`)
             }
           })
         }
         
         console.log('Final image URLs:', results.recommendations?.map((r: any) => r.imageUrl))
+        console.log('Returning results to frontend')
         return results
       } catch (parseError) {
         console.error('❌ JSON Parse Error:', parseError)
-        console.error('Problematic JSON (first 1000 chars):', jsonMatch[0].substring(0, 1000))
+        console.error('Problematic JSON (first 2000 chars):', jsonMatch[0].substring(0, 2000))
         
         // Try to fix common JSON errors
         try {
+          console.log('Attempting to fix JSON...')
           let fixedJson = jsonMatch[0]
           // Remove trailing commas
           fixedJson = fixedJson.replace(/,(\s*[}\]])/g, '$1')
@@ -146,7 +169,7 @@ Return the JSON now:`
           const results = JSON.parse(fixedJson)
           console.log('✅ Fixed and parsed JSON successfully')
           
-          // Apply image URL fixes
+          // Apply image URL fixes (same logic as above)
           if (results.recommendations && Array.isArray(results.recommendations)) {
             results.recommendations.forEach((rec: any) => {
               if (!rec.imageUrl || !rec.imageUrl.startsWith('http')) {
@@ -161,12 +184,16 @@ Return the JSON now:`
               }
             })
           }
+          console.log('Returning fixed results')
           return results
         } catch (fixError) {
           console.error('❌ Could not fix JSON, using demo results')
+          console.error('Fix error:', fixError)
           return generateDemoResults(query)
         }
       }
+    } else {
+      console.log('❌ No JSON found in Gemini response')
     }
     
     // Fallback if parsing fails
