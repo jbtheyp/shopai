@@ -55,18 +55,26 @@ Then provide 3-5 specific product recommendations in JSON format ONLY (no markdo
       "retailer": "Amazon|Wayfair|Booking.com|Skyscanner|HomeAdvisor|etc",
       "affiliateNetwork": "amazon|wayfair|booking|skyscanner|shareasale|cj",
       "productId": "sample-product-id",
-      "imageUrl": "https://example.com/product-image.jpg",
+      "imageUrl": "https://images.unsplash.com/photo-XXXXXXX?w=400&h=400&fit=crop",
       "reason": "Why this matches their need (1 sentence)"
     }
   ]
 }
 
-IMPORTANT: 
-- Include a real, working "imageUrl" for each product from a CDN or image hosting service
-- Use placeholder image services like "https://placehold.co/400x400/png?text=Product+Name" if you cannot find a real image
-- For travel items, use relevant destination or hotel images
-- For services, use relevant service category images
-- Return ONLY the JSON object, no other text.`
+CRITICAL IMAGE REQUIREMENTS:
+- You MUST provide a working imageUrl from Unsplash for each product
+- Use Unsplash search terms that match the product (e.g., for laptop: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop")
+- For electronics: Use actual tech product photos
+- For furniture: Use furniture photos
+- For travel: Use destination/hotel photos
+- DO NOT use placeholder text URLs - use real Unsplash image URLs
+- Examples of good image URLs:
+  * Laptop: https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop
+  * Headphones: https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop
+  * Chair: https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop
+  * Hotel: https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=400&fit=crop
+
+Return ONLY the JSON object, no other text.`
 
     const response = await fetch(`${endpoint}?key=${GEMINI_API_KEY}`, {
       method: 'POST',

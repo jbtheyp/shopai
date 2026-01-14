@@ -312,13 +312,20 @@ export default function Home() {
                               <div key={i} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow bg-white">
                                 <div className="flex flex-col md:flex-row">
                                   {/* Product Image */}
-                                  <div className="md:w-48 md:flex-shrink-0">
+                                  <div className="md:w-48 md:flex-shrink-0 bg-gray-100">
                                     <img 
-                                      src={rec.imageUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop'} 
+                                      src={rec.imageUrl && rec.imageUrl.startsWith('http') ? rec.imageUrl : `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop`} 
                                       alt={rec.name}
                                       className="w-full h-48 md:h-full object-cover"
                                       onError={(e) => {
-                                        e.currentTarget.src = 'https://placehold.co/400x400/e0e7ff/4f46e5/png?text=' + encodeURIComponent(rec.name.substring(0, 20))
+                                        // Fallback to a category-appropriate placeholder
+                                        const categoryImage = message.content.intent === 'travel' 
+                                          ? 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=400&fit=crop'
+                                          : message.content.intent === 'service'
+                                          ? 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=400&fit=crop'
+                                          : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop';
+                                        e.currentTarget.src = categoryImage;
+                                        e.currentTarget.onerror = null; // Prevent infinite loop
                                       }}
                                     />
                                   </div>
