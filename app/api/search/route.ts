@@ -35,46 +35,37 @@ async function searchWithGemini(query: string, imageData?: string) {
   try {
     const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
     
-    const prompt = `You are a shopping assistant. Analyze this search query: "${query}"
+    const prompt = `You are a shopping assistant. Analyze: "${query}"
 
-Determine if the user wants:
-- "product" - physical items to buy
-- "travel" - flights, hotels, vacation packages
-- "service" - local services like plumbers, electricians, etc.
+Return VALID JSON ONLY - no markdown, no explanation, no code blocks.
 
-Then provide 3-5 specific product recommendations in JSON format ONLY (no markdown, no explanation):
-
+Format:
 {
-  "intent": "product|travel|service",
+  "intent": "product",
   "category": "category name",
   "recommendations": [
     {
-      "name": "Specific Product Name",
-      "description": "Brief description (1-2 sentences)",
-      "estimatedPrice": "$XX.XX or price range",
-      "retailer": "Amazon|Wayfair|Booking.com|Skyscanner|HomeAdvisor|etc",
-      "affiliateNetwork": "amazon|wayfair|booking|skyscanner|shareasale|cj",
-      "productId": "sample-product-id",
-      "imageUrl": "https://images.unsplash.com/photo-XXXXXXX?w=400&h=400&fit=crop",
-      "reason": "Why this matches their need (1 sentence)"
+      "name": "Product Name",
+      "description": "Brief description",
+      "estimatedPrice": "$XX.XX",
+      "retailer": "Amazon",
+      "affiliateNetwork": "amazon",
+      "productId": "B08SAMPLE",
+      "imageUrl": "https://images.unsplash.com/photo-xxx",
+      "reason": "Why it matches"
     }
   ]
 }
 
-CRITICAL IMAGE REQUIREMENTS:
-- You MUST provide a working imageUrl from Unsplash for each product
-- Use Unsplash search terms that match the product (e.g., for laptop: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop")
-- For electronics: Use actual tech product photos
-- For furniture: Use furniture photos
-- For travel: Use destination/hotel photos
-- DO NOT use placeholder text URLs - use real Unsplash image URLs
-- Examples of good image URLs:
-  * Laptop: https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop
-  * Headphones: https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop
-  * Chair: https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop
-  * Hotel: https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=400&fit=crop
+CRITICAL RULES:
+1. Return ONLY valid JSON - no text before or after
+2. Use double quotes for all strings
+3. NO trailing commas before closing brackets
+4. Keep descriptions short (under 100 characters)
+5. Provide 3 specific products
+6. Image URLs are optional - omit if uncertain
 
-Return ONLY the JSON object, no other text.`
+Return the JSON now:`
 
     const response = await fetch(`${endpoint}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -101,40 +92,74 @@ Return ONLY the JSON object, no other text.`
     const data = await response.json()
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
     
-    // Parse JSON from response
+    // Parse JSON from response with error handling
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
-      const results = JSON.parse(jsonMatch[0])
-      // Debug logging
-      console.log('Gemini Response:', JSON.stringify(results, null, 2))
-      console.log('Image URLs from Gemini:', results.recommendations?.map((r: any) => r.imageUrl))
-      
-      // Fix/validate image URLs - simplified version
-      if (results.recommendations && Array.isArray(results.recommendations)) {
-        results.recommendations.forEach((rec: any) => {
-          // If imageUrl is missing or invalid, provide one based on product name
-          if (!rec.imageUrl || !rec.imageUrl.startsWith('http')) {
-            const productName = (rec.name || '').toLowerCase()
-            
-            // Smart image matching
-            if (productName.includes('headphone') || productName.includes('earbud')) {
-              rec.imageUrl = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop'
-            } else if (productName.includes('laptop') || productName.includes('computer')) {
-              rec.imageUrl = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop'
-            } else if (productName.includes('phone')) {
-              rec.imageUrl = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop'
-            } else if (productName.includes('chair')) {
-              rec.imageUrl = 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop'
-            } else {
-              // Generic product
-              rec.imageUrl = 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=400&h=400&fit=crop'
+      try {
+        const results = JSON.parse(jsonMatch[0])
+        console.log('✅ Successfully parsed JSON')
+        console.log('Image URLs from Gemini:', results.recommendations?.map((r: any) => r.imageUrl))
+        
+        // Fix/validate image URLs - simplified version
+        if (results.recommendations && Array.isArray(results.recommendations)) {
+          results.recommendations.forEach((rec: any) => {
+            // If imageUrl is missing or invalid, provide one based on product name
+            if (!rec.imageUrl || !rec.imageUrl.startsWith('http')) {
+              const productName = (rec.name || '').toLowerCase()
+              
+              // Smart image matching
+              if (productName.includes('headphone') || productName.includes('earbud')) {
+                rec.imageUrl = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop'
+              } else if (productName.includes('laptop') || productName.includes('computer')) {
+                rec.imageUrl = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop'
+              } else if (productName.includes('phone')) {
+                rec.imageUrl = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop'
+              } else if (productName.includes('chair')) {
+                rec.imageUrl = 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop'
+              } else {
+                // Generic product
+                rec.imageUrl = 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=400&h=400&fit=crop'
+              }
             }
+          })
+        }
+        
+        console.log('Final image URLs:', results.recommendations?.map((r: any) => r.imageUrl))
+        return results
+      } catch (parseError) {
+        console.error('❌ JSON Parse Error:', parseError)
+        console.error('Problematic JSON (first 1000 chars):', jsonMatch[0].substring(0, 1000))
+        
+        // Try to fix common JSON errors
+        try {
+          let fixedJson = jsonMatch[0]
+          // Remove trailing commas
+          fixedJson = fixedJson.replace(/,(\s*[}\]])/g, '$1')
+          // Try parsing again
+          const results = JSON.parse(fixedJson)
+          console.log('✅ Fixed and parsed JSON successfully')
+          
+          // Apply image URL fixes
+          if (results.recommendations && Array.isArray(results.recommendations)) {
+            results.recommendations.forEach((rec: any) => {
+              if (!rec.imageUrl || !rec.imageUrl.startsWith('http')) {
+                const productName = (rec.name || '').toLowerCase()
+                if (productName.includes('headphone') || productName.includes('earbud')) {
+                  rec.imageUrl = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop'
+                } else if (productName.includes('laptop')) {
+                  rec.imageUrl = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop'
+                } else {
+                  rec.imageUrl = 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=400&h=400&fit=crop'
+                }
+              }
+            })
           }
-        })
+          return results
+        } catch (fixError) {
+          console.error('❌ Could not fix JSON, using demo results')
+          return generateDemoResults(query)
+        }
       }
-      
-      console.log('Final image URLs:', results.recommendations?.map((r: any) => r.imageUrl))
-      return results
     }
     
     // Fallback if parsing fails
