@@ -104,7 +104,54 @@ Return ONLY the JSON object, no other text.`
     // Parse JSON from response
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0])
+      const results = JSON.parse(jsonMatch[0])
+      // Debug logging
+      console.log('Gemini Response:', JSON.stringify(results, null, 2))
+      console.log('Image URLs:', results.recommendations?.map((r: any) => r.imageUrl))
+      
+      // Fix/validate image URLs
+      if (results.recommendations) {
+        results.recommendations = results.recommendations.map((rec: any) => {
+          // If imageUrl is missing or invalid, provide a category-appropriate one
+          if (!rec.imageUrl || !rec.imageUrl.startsWith('http')) {
+            // Generate appropriate image based on product name
+            const productName = rec.name.toLowerCase()
+            
+            if (productName.includes('headphone') || productName.includes('earbud') || productName.includes('airpod')) {
+              rec.imageUrl = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop'
+            } else if (productName.includes('laptop') || productName.includes('macbook') || productName.includes('computer')) {
+              rec.imageUrl = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop'
+            } else if (productName.includes('phone') || productName.includes('iphone') || productName.includes('smartphone')) {
+              rec.imageUrl = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop'
+            } else if (productName.includes('watch') || productName.includes('smartwatch')) {
+              rec.imageUrl = 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=400&h=400&fit=crop'
+            } else if (productName.includes('chair') || productName.includes('seat')) {
+              rec.imageUrl = 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop'
+            } else if (productName.includes('desk')) {
+              rec.imageUrl = 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=400&h=400&fit=crop'
+            } else if (productName.includes('keyboard')) {
+              rec.imageUrl = 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&h=400&fit=crop'
+            } else if (productName.includes('mouse')) {
+              rec.imageUrl = 'https://images.unsplash.com/photo-1527814050087-3793815479db?w=400&h=400&fit=crop'
+            } else if (productName.includes('camera')) {
+              rec.imageUrl = 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=400&fit=crop'
+            } else if (productName.includes('speaker') || productName.includes('audio')) {
+              rec.imageUrl = 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&h=400&fit=crop'
+            } else if (results.intent === 'travel') {
+              rec.imageUrl = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=400&fit=crop'
+            } else if (results.intent === 'service') {
+              rec.imageUrl = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=400&fit=crop'
+            } else {
+              // Generic product image
+              rec.imageUrl = 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=400&h=400&fit=crop'
+            }
+            console.log(`Fixed imageUrl for "${rec.name}":`, rec.imageUrl)
+          }
+          return rec
+        })
+      }
+      
+      return results
     }
     
     // Fallback if parsing fails
